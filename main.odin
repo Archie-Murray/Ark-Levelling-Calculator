@@ -349,6 +349,9 @@ main :: proc() {
 	}
 
 	for !rl.WindowShouldClose() {
+		rl.BeginDrawing()
+		defer rl.EndDrawing()
+		rl.ClearBackground(rl.GRAY)
 
 		leveling_data_update(&leveling_data, dino_mode)
 
@@ -364,6 +367,10 @@ main :: proc() {
 			write_file(&leveling_data)
 		}
 
+		if rl.IsKeyDown(.LEFT_CONTROL) && rl.IsKeyPressed(.C) {
+			copy_to_clipboard(&leveling_data)
+		}
+
 		if rl.GuiButton({250, 960, 100, 40}, "Swap Mode") {
 			dino_mode = !dino_mode
 			leveling_data_calculate(&leveling_data, dino_mode)
@@ -373,9 +380,6 @@ main :: proc() {
 			)
 		}
 
-		rl.BeginDrawing()
-		defer rl.EndDrawing()
-		rl.ClearBackground(rl.GRAY)
 		for level in 0 ..< leveling_data_max_level(&leveling_data, dino_mode) {
 			rl.DrawCircleV(
 				to_graph_pos(
@@ -456,18 +460,11 @@ calculate_engrams :: proc(
 	return engram_data
 }
 
-string_to_u8 :: proc(s: string) -> [dynamic]u8 {
-	result := make([dynamic]u8, len(s)) // Allocate a mutable byte array
-	for i in 0 ..< len(s) {
-		result[i] = s[i] // Copy each character
-	}
-	return result
-}
-
 copy_to_clipboard :: proc(level_data: ^Leveling_Data) {
+	rl.TraceLog(.INFO, "Creating output data...")
 	string_builder := strings.builder_make_none()
 	defer strings.builder_destroy(&string_builder)
-	strings.write_string(&string_builder, fmt.tprint("LevelExperienceRampOverrides=\n(\n"))
+	strings.write_string(&string_builder, fmt.tprint("LevelExperienceRampOverrides=\n("))
 	for xp, level in level_data.player_data {
 		if level == len(level_data.player_data) - 1 {
 			strings.write_string(
@@ -482,7 +479,7 @@ copy_to_clipboard :: proc(level_data: ^Leveling_Data) {
 		}
 	}
 	strings.write_string(&string_builder, ")\n")
-	strings.write_string(&string_builder, fmt.tprintfln("LevelExperienceRampOverrides=\n("))
+	strings.write_string(&string_builder, fmt.tprint("LevelExperienceRampOverrides=\n("))
 	for xp, level in level_data.dino_data {
 		if level == len(level_data.dino_data) - 1 {
 			strings.write_string(
@@ -519,6 +516,7 @@ copy_to_clipboard :: proc(level_data: ^Leveling_Data) {
 		),
 	)
 	rl.SetClipboardText(strings.to_cstring(&string_builder))
+	rl.TraceLog(.INFO, "Copied data to clipboard!")
 }
 
 write_file :: proc(level_data: ^Leveling_Data) {
@@ -529,6 +527,7 @@ write_file :: proc(level_data: ^Leveling_Data) {
 	if file_err != nil {
 		return
 	}
+	rl.TraceLog(.INFO, "Creating output data...")
 	fmt.fprint(file, "LevelExperienceRampOverrides=\n(")
 	for xp, level in level_data.dino_data {
 		if level == len(level_data.dino_data) - 1 {
@@ -562,4 +561,5 @@ write_file :: proc(level_data: ^Leveling_Data) {
 	)
 	os.flush(file)
 	os.close(file)
+	rl.TraceLog(.INFO, "Wrote data to output.ini!")
 }
