@@ -1,3 +1,5 @@
 *.pdb
 *.ilk
 *.ini
+# Linux
+./Ark-Leveling
