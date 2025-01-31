@@ -8,5 +8,5 @@ This project is not entirely finished and requires some more fixes but should be
 
 ## Examples:
 Here is an example of the leveling data for a max level of 300 and max experience of 1,000,000:
-![[./share/Demo Screenshot.png]]
+![Demo Screenshot](./share/Demo Screenshot.png)
 
