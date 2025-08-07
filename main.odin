@@ -64,15 +64,15 @@ number_input_make :: proc(
 	default_value, max_len: int,
 	size: rl.Rectangle,
 ) -> Number_Input {
-	return(
-		Number_Input {
-			builder = strings.builder_make_none(),
-			max_len = max_len,
-			panel_size = size,
-			title = title,
-			value = default_value,
-		} \
-	)
+	input := Number_Input {
+		builder    = strings.builder_make_none(),
+		max_len    = max_len,
+		panel_size = size,
+		title      = title,
+		value      = default_value,
+	}
+	strings.write_int(&input.builder, default_value)
+	return input
 }
 
 
@@ -85,19 +85,25 @@ number_input_update :: proc(self: ^Number_Input) -> bool {
 	rl.SetMouseCursor(.IBEAM)
 	key := rl.GetCharPressed()
 	key_int := i32(key)
+
+	if rl.IsKeyPressed(.BACKSPACE) && len > 0 {
+		fmt.println("Pressed backspace, updated")
+		strings.pop_rune(&self.builder)
+		did_write = true
+	} else if rl.IsKeyPressed(.BACKSPACE) {
+		fmt.printfln("Pressed backspace but len was %d/%d", len, self.max_len)
+	}
+
 	for key_int >= 48 && key_int <= 57 && len < self.max_len {
 		strings.write_rune(&self.builder, key)
 		key = rl.GetCharPressed()
 		key_int = i32(key)
 		did_write = true
 	}
-	if rl.IsKeyPressed(.BACKSPACE) && len > 0 {
-		old_len := len
-		strings.pop_rune(&self.builder)
-		did_write = true
-	}
-
 	if did_write {
+		if rl.IsKeyPressed(.BACKSPACE) {
+			fmt.println("Backspace write!")
+		}
 		self.value = strconv.parse_int(strings.to_string(self.builder)) or_else 0
 	}
 
@@ -132,15 +138,15 @@ float_input_make :: proc(
 	max_len: int,
 	size: rl.Rectangle,
 ) -> Float_Input {
-	return(
-		Float_Input {
-			builder = strings.builder_make_none(),
-			max_len = max_len,
-			panel_size = size,
-			title = title,
-			value = default_value,
-		} \
-	)
+	input := Float_Input {
+		builder    = strings.builder_make_none(),
+		max_len    = max_len,
+		panel_size = size,
+		title      = title,
+		value      = default_value,
+	}
+	strings.write_f32(&input.builder, default_value, 'f')
+	return input
 }
 
 float_input_update :: proc(self: ^Float_Input) -> bool {
@@ -159,7 +165,6 @@ float_input_update :: proc(self: ^Float_Input) -> bool {
 		did_write = true
 	}
 	if rl.IsKeyPressed(.BACKSPACE) && len > 0 {
-		old_len := len
 		strings.pop_rune(&self.builder)
 		did_write = true
 	}
@@ -437,12 +442,10 @@ calculate_levels :: proc(max_level, max_xp: int) -> [dynamic]int {
 }
 
 calculate_scale :: proc(max_level, max_xp: int) -> rl.Vector2 {
-	return(
-		rl.Vector2 {
-			f32(rl.GetScreenWidth() - 100) / f32(max_level),
-			f32(rl.GetScreenHeight() - 100) / f32(max_xp),
-		} \
-	)
+	return (rl.Vector2 {
+				f32(rl.GetScreenWidth() - 100) / f32(max_level),
+				f32(rl.GetScreenHeight() - 100) / f32(max_xp),
+			})
 }
 
 calculate_engrams :: proc(
